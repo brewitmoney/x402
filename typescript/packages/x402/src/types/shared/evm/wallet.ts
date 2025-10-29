@@ -64,13 +64,7 @@ export function createConnectedClient(
 }
 
 /**
- * Creates a public client configured for the Base Sepolia testnet
- *
- * @deprecated Use `createConnectedClient("base-sepolia")` instead
- * @returns A public client instance connected to Base Sepolia
- */
-export function createClientSepolia(): ConnectedClient<Transport, typeof baseSepolia, undefined> {
-  return createConnectedClient("base-sepolia") as ConnectedClient<
+ * Creates a public client configured for the Base Sepolia testnetcreateSigner
     Transport,
     typeof baseSepolia,
     undefined

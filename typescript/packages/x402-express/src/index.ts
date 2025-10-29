@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Address, getAddress } from "viem";
 import { Address as SolanaAddress } from "@solana/kit";
-import { exact } from "x402/schemes";
+import { exact, erc4337 } from "x402/schemes";
 import {
   computeRoutePatterns,
   findMatchingPaymentRequirements,
@@ -121,8 +121,33 @@ export function paymentMiddleware(
     // TODO: create a shared middleware function to build payment requirements
     // evm networks
     if (SupportedEVMNetworks.includes(network)) {
+      // Add both exact and erc4337 payment requirements for EVM networks
       paymentRequirements.push({
         scheme: "exact",
+        network,
+        maxAmountRequired,
+        resource: resourceUrl,
+        description: description ?? "",
+        mimeType: mimeType ?? "",
+        payTo: getAddress(payTo),
+        maxTimeoutSeconds: maxTimeoutSeconds ?? 60,
+        asset: getAddress(asset.address),
+        // TODO: Rename outputSchema to requestStructure
+        outputSchema: {
+          input: {
+            type: "http",
+            method: req.method.toUpperCase(),
+            discoverable: discoverable ?? true,
+            ...inputSchema,
+          },
+          output: outputSchema,
+        },
+        extra: (asset as ERC20TokenAmount["asset"]).eip712,
+      });
+
+      // Add erc4337 payment requirements for EVM networks
+      paymentRequirements.push({
+        scheme: "erc4337",
         network,
         maxAmountRequired,
         resource: resourceUrl,
@@ -239,7 +264,12 @@ export function paymentMiddleware(
 
     let decodedPayment: PaymentPayload;
     try {
-      decodedPayment = exact.evm.decodePayment(payment);
+      // Try exact scheme first, then erc4337
+      try {
+        decodedPayment = exact.evm.decodePayment(payment);
+      } catch {
+        decodedPayment = erc4337.evm.decodePayment(payment);
+      }
       decodedPayment.x402Version = x402Version;
     } catch (error) {
       console.error(error);

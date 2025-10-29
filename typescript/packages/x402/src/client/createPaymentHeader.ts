@@ -1,6 +1,15 @@
 import { createPaymentHeader as createPaymentHeaderExactEVM } from "../schemes/exact/evm/client";
 import { createPaymentHeader as createPaymentHeaderExactSVM } from "../schemes/exact/svm/client";
-import { isEvmSignerWallet, isMultiNetworkSigner, isSvmSignerWallet, MultiNetworkSigner, Signer, SupportedEVMNetworks, SupportedSVMNetworks } from "../types/shared";
+import { createPaymentHeader as createPaymentHeaderErc4337EVM } from "../schemes/erc4337/evm/client";
+import {
+  isEvmSignerWallet,
+  isMultiNetworkSigner,
+  isSvmSignerWallet,
+  MultiNetworkSigner,
+  Signer,
+  SupportedEVMNetworks,
+  SupportedSVMNetworks,
+} from "../types/shared";
 import { PaymentRequirements } from "../types/verify";
 import { X402Config } from "../types/config";
 
@@ -11,6 +20,7 @@ import { X402Config } from "../types/config";
  * @param x402Version - The version of the X402 protocol to use
  * @param paymentRequirements - The payment requirements containing scheme and network information
  * @param config - Optional configuration for X402 operations (e.g., custom RPC URLs)
+ * @param delegationKey - Optional delegation key for the payment
  * @returns A promise that resolves to the created payment header string
  */
 export async function createPaymentHeader(
@@ -18,8 +28,10 @@ export async function createPaymentHeader(
   x402Version: number,
   paymentRequirements: PaymentRequirements,
   config?: X402Config,
+  delegationKey?: string,
 ): Promise<string> {
   // exact scheme
+  console.log("paymentRequirements", paymentRequirements);
   if (paymentRequirements.scheme === "exact") {
     // evm
     if (SupportedEVMNetworks.includes(paymentRequirements.network)) {
@@ -29,11 +41,7 @@ export async function createPaymentHeader(
         throw new Error("Invalid evm wallet client provided");
       }
 
-      return await createPaymentHeaderExactEVM(
-        evmClient,
-        x402Version,
-        paymentRequirements,
-      );
+      return await createPaymentHeaderExactEVM(evmClient, x402Version, paymentRequirements);
     }
     // svm
     if (SupportedSVMNetworks.includes(paymentRequirements.network)) {
@@ -42,14 +50,30 @@ export async function createPaymentHeader(
         throw new Error("Invalid svm wallet client provided");
       }
 
-      return await createPaymentHeaderExactSVM(
-        svmClient,
-        x402Version,
-        paymentRequirements,
-        config,
-      );
+      return await createPaymentHeaderExactSVM(svmClient, x402Version, paymentRequirements, config);
     }
     throw new Error("Unsupported network");
   }
+
+  // erc4337 scheme
+  if (paymentRequirements.scheme === "erc4337") {
+    // evm
+    if (SupportedEVMNetworks.includes(paymentRequirements.network)) {
+      const evmClient = isMultiNetworkSigner(client) ? client.evm : client;
+
+      if (!isEvmSignerWallet(evmClient)) {
+        throw new Error("Invalid evm wallet client provided");
+      }
+
+      return await createPaymentHeaderErc4337EVM(
+        evmClient,
+        x402Version,
+        paymentRequirements,
+        delegationKey,
+      );
+    }
+    throw new Error("Unsupported network for erc4337 scheme");
+  }
+
   throw new Error("Unsupported scheme");
 }

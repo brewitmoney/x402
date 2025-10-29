@@ -12,7 +12,11 @@ import { getNetworkId } from "../shared/network";
  * @param scheme - The scheme to check against. If not provided, the scheme will not be checked.
  * @returns The payment requirement that is the most appropriate for the user.
  */
-export function selectPaymentRequirements(paymentRequirements: PaymentRequirements[], network?: Network | Network[], scheme?: "exact"): PaymentRequirements {
+export function selectPaymentRequirements(
+  paymentRequirements: PaymentRequirements[],
+  network?: Network | Network[],
+  scheme?: "exact" | "erc4337",
+): PaymentRequirements {
   // Sort `base` payment requirements to the front of the list. This is to ensure that base is preferred if available.
   paymentRequirements.sort((a, b) => {
     if (a.network === "base" && b.network !== "base") {
@@ -29,7 +33,11 @@ export function selectPaymentRequirements(paymentRequirements: PaymentRequiremen
     // If the scheme is not provided, we accept any scheme.
     const isExpectedScheme = !scheme || requirement.scheme === scheme;
     // If the chain is not provided, we accept any chain.
-    const isExpectedChain = !network || (Array.isArray(network) ? network.includes(requirement.network) : network == requirement.network);
+    const isExpectedChain =
+      !network ||
+      (Array.isArray(network)
+        ? network.includes(requirement.network)
+        : network == requirement.network);
 
     return isExpectedScheme && isExpectedChain;
   });
@@ -37,7 +45,10 @@ export function selectPaymentRequirements(paymentRequirements: PaymentRequiremen
   // Filter down to USDC requirements
   const usdcRequirements = broadlyAcceptedPaymentRequirements.filter(requirement => {
     // If the address is a USDC address, we return it.
-    return requirement.asset === getUsdcChainConfigForChain(getNetworkId(requirement.network))?.usdcAddress;
+    return (
+      requirement.asset ===
+      getUsdcChainConfigForChain(getNetworkId(requirement.network))?.usdcAddress
+    );
   });
 
   // Prioritize USDC requirements if available
@@ -60,5 +71,8 @@ export function selectPaymentRequirements(paymentRequirements: PaymentRequiremen
  * @param scheme - The scheme to check against. If not provided, the scheme will not be checked.
  * @returns The payment requirement that is the most appropriate for the user.
  */
-export type PaymentRequirementsSelector = (paymentRequirements: PaymentRequirements[], network?: Network | Network[], scheme?: "exact") => PaymentRequirements;
-
+export type PaymentRequirementsSelector = (
+  paymentRequirements: PaymentRequirements[],
+  network?: Network | Network[],
+  scheme?: "exact" | "erc4337",
+) => PaymentRequirements;

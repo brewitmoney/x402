@@ -10,7 +10,7 @@ const MixedAddressRegex = /^0x[a-fA-F0-9]{40}|[A-Za-z0-9][A-Za-z0-9-]{0,34}[A-Za
 const HexEncoded64ByteRegex = /^0x[0-9a-fA-F]{64}$/;
 const EvmSignatureRegex = /^0x[0-9a-fA-F]+$/; // Flexible hex signature validation
 // Enums
-export const schemes = ["exact"] as const;
+export const schemes = ["exact", "erc4337"] as const;
 export const x402Versions = [1] as const;
 export const ErrorReasons = [
   "insufficient_funds",
@@ -36,6 +36,12 @@ export const ErrorReasons = [
   "invalid_exact_svm_payload_transaction_sender_ata_not_found",
   "invalid_exact_svm_payload_transaction_simulation_failed",
   "invalid_exact_svm_payload_transaction_transfer_to_incorrect_ata",
+  "invalid_erc4337_payload_userop_signature",
+  "invalid_erc4337_payload_userop_hash",
+  "invalid_erc4337_payload_userop_nonce",
+  "invalid_erc4337_payload_userop_deadline",
+  "invalid_erc4337_payload_userop_sender",
+  "invalid_erc4337_payload_userop_call_data",
   "invalid_network",
   "invalid_payload",
   "invalid_payment_requirements",
@@ -96,6 +102,27 @@ export const ExactEvmPayloadSchema = z.object({
 });
 export type ExactEvmPayload = z.infer<typeof ExactEvmPayloadSchema>;
 
+// Define ERC-4337 payload schema
+export const Erc4337PayloadSchema = z.object({
+  userOpHash: z.string(),
+  signature: z.string().regex(EvmSignatureRegex),
+  userOp: z.object({
+    sender: z.string(),
+    nonce: z.string().refine(isInteger),
+    initCode: z.string().optional(),
+    callData: z.string(),
+    callGasLimit: z.string().refine(isInteger),
+    verificationGasLimit: z.string().refine(isInteger),
+    preVerificationGas: z.string().refine(isInteger),
+    maxFeePerGas: z.string().refine(isInteger),
+    maxPriorityFeePerGas: z.string().refine(isInteger),
+    paymasterData: z.string().optional(),
+    paymaster: z.string().optional(),
+    paymasterPostOpGasLimit: z.string().optional(),
+    paymasterVerificationGasLimit: z.string().optional(),
+  }),
+});
+export type Erc4337Payload = z.infer<typeof Erc4337PayloadSchema>;
 // x402ExactSvmPayload
 export const ExactSvmPayloadSchema = z.object({
   transaction: z.string().regex(Base64EncodedRegex),
@@ -107,11 +134,13 @@ export const PaymentPayloadSchema = z.object({
   x402Version: z.number().refine(val => x402Versions.includes(val as 1)),
   scheme: z.enum(schemes),
   network: NetworkSchema,
-  payload: z.union([ExactEvmPayloadSchema, ExactSvmPayloadSchema]),
+  payload: z.union([ExactEvmPayloadSchema, ExactSvmPayloadSchema, Erc4337PayloadSchema]),
 });
 export type PaymentPayload = z.infer<typeof PaymentPayloadSchema>;
 export type UnsignedPaymentPayload = Omit<PaymentPayload, "payload"> & {
-  payload: Omit<ExactEvmPayload, "signature"> & { signature: undefined };
+  payload:
+    | (Omit<ExactEvmPayload, "signature"> & { signature: undefined })
+    | (Omit<Erc4337Payload, "signature"> & { signature: undefined });
 };
 
 // x402 Resource Server Response

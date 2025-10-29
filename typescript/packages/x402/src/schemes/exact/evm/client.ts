@@ -1,6 +1,11 @@
 import { Address, Chain, LocalAccount, Transport } from "viem";
 import { isSignerWallet, SignerWallet } from "../../../types/shared/evm";
-import { PaymentPayload, PaymentRequirements, UnsignedPaymentPayload } from "../../../types/verify";
+import {
+  ExactEvmPayload,
+  PaymentPayload,
+  PaymentRequirements,
+  UnsignedPaymentPayload,
+} from "../../../types/verify";
 import { createNonce, signAuthorization } from "./sign";
 import { encodePayment } from "./utils/paymentUtils";
 
@@ -57,9 +62,13 @@ export async function signPaymentHeader<transport extends Transport, chain exten
   paymentRequirements: PaymentRequirements,
   unsignedPaymentHeader: UnsignedPaymentPayload,
 ): Promise<PaymentPayload> {
+  // Type assertion: This function only handles exact scheme (has authorization, not userOp)
+  const exactPayload = unsignedPaymentHeader.payload as Omit<ExactEvmPayload, "signature"> & {
+    signature: undefined;
+  };
   const { signature } = await signAuthorization(
     client,
-    unsignedPaymentHeader.payload.authorization,
+    exactPayload.authorization,
     paymentRequirements,
   );
 

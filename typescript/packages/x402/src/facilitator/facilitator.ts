@@ -1,5 +1,6 @@
 import { verify as verifyExactEvm, settle as settleExactEvm } from "../schemes/exact/evm";
 import { verify as verifyExactSvm, settle as settleExactSvm } from "../schemes/exact/svm";
+import { verify as verifyErc4337, settle as settleErc4337 } from "../schemes/erc4337/evm";
 import { SupportedEVMNetworks, SupportedSVMNetworks } from "../types/shared";
 import { X402Config } from "../types/config";
 import {
@@ -54,6 +55,17 @@ export async function verify<
     }
   }
 
+  // erc4337 scheme
+  if (paymentRequirements.scheme === "erc4337") {
+    if (SupportedEVMNetworks.includes(paymentRequirements.network)) {
+      return verifyErc4337(
+        client as EvmConnectedClient<transport, chain, account>,
+        payload,
+        paymentRequirements,
+      );
+    }
+  }
+
   // unsupported scheme
   return {
     isValid: false,
@@ -94,6 +106,18 @@ export async function settle<transport extends Transport, chain extends Chain>(
     // svm
     if (SupportedSVMNetworks.includes(paymentRequirements.network)) {
       return await settleExactSvm(client as KeyPairSigner, payload, paymentRequirements, config);
+    }
+  }
+
+  // erc4337 scheme
+  if (paymentRequirements.scheme === "erc4337") {
+    // evm only for now
+    if (SupportedEVMNetworks.includes(paymentRequirements.network)) {
+      return await settleErc4337(
+        client as EvmSignerWallet<chain, transport>,
+        payload,
+        paymentRequirements,
+      );
     }
   }
 

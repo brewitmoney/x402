@@ -4,6 +4,7 @@ import { decodeXPaymentResponse, wrapFetchWithPayment, createSigner, type Hex } 
 config();
 
 const privateKey = process.env.PRIVATE_KEY as Hex | string;
+const delegationKey = process.env.DELEGATION_KEY as string;
 const baseURL = process.env.RESOURCE_SERVER_URL as string; // e.g. https://example.com
 const endpointPath = process.env.ENDPOINT_PATH as string; // e.g. /weather
 const url = `${baseURL}${endpointPath}`; // e.g. https://example.com/weather
@@ -24,14 +25,14 @@ if (!baseURL || !privateKey || !endpointPath) {
 async function main(): Promise<void> {
   // const signer = await createSigner("solana-devnet", privateKey); // uncomment for solana
   const signer = await createSigner("base-sepolia", privateKey);
-  const fetchWithPayment = wrapFetchWithPayment(fetch, signer);
+  const fetchWithPayment = wrapFetchWithPayment(fetch, signer, delegationKey);
 
   const response = await fetchWithPayment(url, { method: "GET" });
   const body = await response.json();
   console.log(body);
 
-  const paymentResponse = decodeXPaymentResponse(response.headers.get("x-payment-response")!);
-  console.log(paymentResponse);
+  // const paymentResponse = decodeXPaymentResponse(response.headers.get("x-payment-response")!);
+  // console.log(paymentResponse);
 }
 
 main().catch(error => {

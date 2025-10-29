@@ -51,10 +51,12 @@ import {
  * @throws {Error} If the request configuration is missing
  * @throws {Error} If a payment has already been attempted for this request
  * @throws {Error} If there's an error creating the payment header
+ * @param {string} delegationKey - The delegation key for the payment
  */
 export function wrapFetchWithPayment(
   fetch: typeof globalThis.fetch,
   walletClient: Signer | MultiNetworkSigner,
+  delegationKey?: string,
   maxValue: bigint = BigInt(0.1 * 10 ** 6), // Default to 0.10 USDC
   paymentRequirementsSelector: PaymentRequirementsSelector = selectPaymentRequirements,
   config?: X402Config,
@@ -82,8 +84,8 @@ export function wrapFetchWithPayment(
 
     const selectedPaymentRequirements = paymentRequirementsSelector(
       parsedPaymentRequirements,
-      network,
-      "exact",
+      undefined,
+      "erc4337",
     );
 
     if (BigInt(selectedPaymentRequirements.maxAmountRequired) > maxValue) {
@@ -95,6 +97,7 @@ export function wrapFetchWithPayment(
       x402Version,
       selectedPaymentRequirements,
       config,
+      delegationKey,
     );
 
     if (!init) {
