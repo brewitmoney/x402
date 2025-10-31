@@ -31,7 +31,6 @@ export async function createPaymentHeader(
   delegationKey?: string,
 ): Promise<string> {
   // exact scheme
-  console.log("paymentRequirements", paymentRequirements);
   if (paymentRequirements.scheme === "exact") {
     // evm
     if (SupportedEVMNetworks.includes(paymentRequirements.network)) {

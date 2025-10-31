@@ -31,15 +31,8 @@ app.use(
           asset: {
             address: "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
             decimals: 6,
-            // omit eip712 for Solana
-            eip712: {
-              name: "WETH",
-              version: "1",
-            },
           },
         },
-        // network: "base" // uncomment for Base mainnet
-        // network: "solana" // uncomment for Solana mainnet
         network: "polygon",
       },
     },

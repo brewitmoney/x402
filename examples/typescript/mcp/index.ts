@@ -24,7 +24,7 @@ if (!privateKey || !baseURL || !endpointPath) {
 }
 
 const signer = await createSigner("base-sepolia", privateKey);
-const fetchWithPayment = wrapFetchWithPayment(fetch, signer, delegationKey);
+const fetchWithPayment = wrapFetchWithPayment(fetch, signer, delegationKey, BigInt(1000000));
 
 // const client = withPaymentInterceptor(axios.create({ baseURL }), account);
 
@@ -36,14 +36,13 @@ const server = new McpServer({
 
 // Add an addition tool
 server.tool(
-  "get-data-from-resource-server",
-  "Get data from the resource server (in this example, the weather)",
+  "get-weather",
+  "Get the weather from the resource server (in this example, the weather)",
   {},
   async () => {
     // const res = await client.get(endpointPath);
     const response = await fetchWithPayment(`${baseURL}${endpointPath}`, { method: "GET" });
     const body = await response.json();
-    console.log(body);
 
     return {
       content: [{ type: "text", text: JSON.stringify(body) }],

@@ -10,7 +10,6 @@ import { PaymentPayload, PaymentPayloadSchema, Erc4337Payload } from "../../../.
 export function encodePayment(payment: PaymentPayload): string {
   // ERC-4337 scheme
 
-  console.log("encodePayment", payment);
   if (SupportedEVMNetworks.includes(payment.network) && payment.scheme === "erc4337") {
     const erc4337Payload = payment.payload as Erc4337Payload;
     const safe = {
@@ -40,8 +39,6 @@ export function encodePayment(payment: PaymentPayload): string {
 export function decodePayment(payment: string): PaymentPayload {
   const decoded = safeBase64Decode(payment);
   const parsed = JSON.parse(decoded);
-
-  console.log("decodePayment", parsed);
 
   if (SupportedEVMNetworks.includes(parsed.network) && parsed.scheme === "erc4337") {
     const obj = {
